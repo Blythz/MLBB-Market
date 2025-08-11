@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/utils/format"
 import ReviewStars from "@/components/reviews/review-stars"
 import { useSellerReviewSummary } from "@/hooks/use-seller-review-summary"
-import { Eye, Shield } from "lucide-react"
+import { Eye, Shield, Plus } from "lucide-react"
+import { useCart } from "@/hooks/use-cart"
 
 export type ListingCardProps = {
   id?: string
@@ -39,17 +40,20 @@ export default function ListingCard({
   isVerifiedSeller = false,
 }: ListingCardProps) {
   const { avg, count } = useSellerReviewSummary(sellerId)
+  const { addItem, isInCart } = useCart()
 
   return (
-    <Link href={"/listing/" + id} className="group block h-full">
+    <div className="group block h-full">
       <Card className="h-full overflow-hidden border-neutral-800/50 bg-gradient-to-b from-neutral-900/50 to-neutral-900/80 backdrop-blur-sm transition-all duration-300 hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1">
         <div className="relative aspect-[2/3] w-full overflow-hidden">
-          <img
-            src={imageUrl || "/placeholder.svg?height=900&width=600&query=mlbb%20portrait"}
-            alt={title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-          />
+          <Link href={"/listing/" + id} className="absolute inset-0">
+            <img
+              src={imageUrl || "/placeholder.svg?height=900&width=600&query=mlbb%20portrait"}
+              alt={title}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+            />
+          </Link>
 
           {/* Overlay on hover */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -75,6 +79,21 @@ export default function ListingCard({
               </Badge>
             </div>
           )}
+          {/* Add to cart */}
+          <div className="absolute bottom-3 right-3">
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                addItem({ id, title, price, imageUrl, sellerId })
+              }}
+              disabled={isInCart(id)}
+              className="inline-flex items-center gap-1 rounded-full border border-cyan-500/40 bg-neutral-900/80 px-3 py-1.5 text-xs text-cyan-200 hover:bg-neutral-800 disabled:opacity-50"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {isInCart(id) ? "In Cart" : "Add to Cart"}
+            </button>
+          </div>
         </div>
 
         <CardContent className="p-4 space-y-3">
@@ -106,6 +125,6 @@ export default function ListingCard({
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   )
 }
