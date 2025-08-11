@@ -15,7 +15,7 @@ import LoginDialog from "@/components/login-dialog"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { ShoppingCart } from "lucide-react"
-import CartSheet from "@/components/cart-sheet"
+import CartSheet from "./cart-sheet"
 import { useCart } from "@/hooks/use-cart"
 
 function initials(name?: string, email?: string) {
