@@ -52,12 +52,14 @@ export default function SellerInboxDialog({
   const [messages, setMessages] = React.useState<Message[]>([])
   const [text, setText] = React.useState("")
   const [loadingMessages, setLoadingMessages] = React.useState(false)
+  const [mobileThread, setMobileThread] = React.useState(false)
 
   // Fallback cache for buyer names if conversation is missing buyerName
   const [buyerNameMap, setBuyerNameMap] = React.useState<Record<string, string>>({})
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const bottomRef = React.useRef<HTMLDivElement>(null)
+  const isSmallScreen = () => typeof window !== "undefined" && window.matchMedia && window.matchMedia("(max-width: 767px)").matches
 
   const initials = (name?: string | null) => {
     if (!name) return "?"
@@ -183,11 +185,38 @@ export default function SellerInboxDialog({
     }
   }
 
+  const onSelectConversation = (c: Conversation) => {
+    setSelected(c)
+    if (isSmallScreen()) setMobileThread(true)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[80vh] max-w-4xl flex-col rounded-2xl border border-white/10 bg-[#111b21] p-0 text-neutral-100 shadow-2xl">
+      <DialogContent
+        className="
+          flex flex-col border border-white/10 bg-[#111b21] text-neutral-100 shadow-2xl
+          /* Mobile fullscreen bottom sheet */
+          top-auto left-0 right-0 bottom-0 translate-x-0 translate-y-0 h-[100dvh] max-w-full rounded-none p-0
+          data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom duration-300
+          /* Desktop centered */
+          sm:top-[50%] sm:left-[50%] sm:right-auto sm:bottom-auto sm:translate-x-[-50%] sm:translate-y-[-50%]
+          sm:h-[80vh] sm:max-w-4xl sm:rounded-2xl sm:p-0
+        "
+      >
         <DialogHeader className="border-b border-white/10 bg-[#202c33] px-4 py-3">
           <div className="flex items-center gap-3">
+            {mobileThread && (
+              <button
+                type="button"
+                onClick={() => setMobileThread(false)}
+                className="grid h-8 w-8 place-items-center rounded-full text-[#e9edef] hover:bg-white/5 md:hidden"
+                aria-label="Back"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                  <path d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+            )}
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2a3942] text-xs">B</div>
             <DialogTitle className="text-sm font-medium">Buyer Messages</DialogTitle>
           </div>
@@ -199,9 +228,9 @@ export default function SellerInboxDialog({
           </div>
         ) : (
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 md:grid-cols-3">
-            <div className="border-r border-white/10 bg-[#111b21] md:col-span-1">
-              <div className="mb-2 px-2 text-xs text-neutral-400">Conversations</div>
-              <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
+            <div className={"border-r border-white/10 bg-[#111b21] md:col-span-1 " + (mobileThread ? "hidden md:block" : "block") }>
+              <div className="mb-2 px-3 pt-2 text-xs text-[#8696a0]">Conversations</div>
+              <div className="flex max-h-[60vh] flex-col overflow-y-auto">
                 {convos.length ? (
                   convos.map((c: Conversation) => {
                     const active = selected?.id === c.id
@@ -209,23 +238,23 @@ export default function SellerInboxDialog({
                     return (
                       <button
                         key={c.id}
-                        onClick={() => setSelected(c)}
+                        onClick={() => onSelectConversation(c)}
                         className={
-                          "group flex w-full items-center gap-3 rounded-none border-b border-white/10 px-3 py-2 text-left text-sm transition " +
+                          "group flex w-full items-center gap-3 rounded-none border-b border-white/10 px-3 py-3 text-left transition " +
                           (active
                             ? "bg-[#2a3942] text-white"
                             : "bg-transparent text-[#e9edef] hover:bg-[#202c33]")
                         }
                       >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2a3942] text-xs text-white">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2a3942] text-sm text-white">
                           {initials(name)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="truncate text-xs text-[#8696a0]">Buyer: {name}</div>
-                            <div className="shrink-0 text-[10px] text-[#8696a0]">{formatTime(c.updatedAt)}</div>
+                            <div className="truncate text-[15px] font-medium text-[#e9edef]">{name}</div>
+                            <div className="shrink-0 text-[11px] text-[#8696a0]">{formatTime(c.updatedAt)}</div>
                           </div>
-                          <div className="truncate text-sm">{c.lastMessage || "No messages yet"}</div>
+                          <div className="truncate text-[13px] text-[#8696a0]">{c.lastMessage || "No messages yet"}</div>
                         </div>
                       </button>
                     )
@@ -236,7 +265,7 @@ export default function SellerInboxDialog({
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-col md:col-span-2">
+            <div className={"flex min-h-0 flex-col md:col-span-2 " + (mobileThread ? "block" : "hidden md:block") }>
               <div className="border-b border-white/10 bg-[#202c33] px-3 py-2 text-xs text-[#8696a0]">Thread</div>
               <div
                 ref={scrollRef}
@@ -270,6 +299,7 @@ export default function SellerInboxDialog({
                 )}
                 <div ref={bottomRef} />
               </div>
+
               <div className="border-t border-white/10 bg-[#202c33] px-2 py-2">
                 <div className="flex items-center gap-2">
                   <button className="grid h-10 w-10 place-items-center rounded-full text-[#8696a0] hover:bg-white/5" title="Emoji" type="button">
