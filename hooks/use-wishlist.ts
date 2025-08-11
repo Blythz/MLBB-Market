@@ -5,7 +5,7 @@ import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, getFir
 import { ensureFirebaseApp, firebaseEnabled } from "@/lib/firebase"
 import { useAuth } from "@/components/auth-provider"
 
-export type CartItem = {
+export type WishlistItem = {
   id: string
   title: string
   price: number
@@ -14,29 +14,26 @@ export type CartItem = {
   updatedAt?: any
 }
 
-const LOCAL_KEY = "mlbb_cart_v1"
+const LOCAL_KEY = "mlbb_wishlist_v1"
 
-export function useCart() {
+export function useWishlist() {
   const { user } = useAuth()
-  const [items, setItems] = React.useState<CartItem[]>([])
+  const [items, setItems] = React.useState<WishlistItem[]>([])
   const [loading, setLoading] = React.useState(true)
 
-  // Firestore subscription when available and user is logged in
   React.useEffect(() => {
     if (!firebaseEnabled || !user) {
-      // Local storage fallback
       try {
         const raw = localStorage.getItem(LOCAL_KEY)
-        setItems(raw ? (JSON.parse(raw) as CartItem[]) : [])
+        setItems(raw ? (JSON.parse(raw) as WishlistItem[]) : [])
       } catch {
         setItems([])
       }
       setLoading(false)
-      // Sync across tabs
       const onStorage = (e: StorageEvent) => {
         if (e.key === LOCAL_KEY) {
           try {
-            setItems(e.newValue ? (JSON.parse(e.newValue) as CartItem[]) : [])
+            setItems(e.newValue ? (JSON.parse(e.newValue) as WishlistItem[]) : [])
           } catch {}
         }
       }
@@ -45,12 +42,11 @@ export function useCart() {
     }
 
     const db = getFirestore(ensureFirebaseApp())
-    const ref = collection(db, "users", user.uid, "cart")
+    const ref = collection(db, "users", user.uid, "wishlist")
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        const arr = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<CartItem, "id">) })) as CartItem[]
-        // Sort by updatedAt desc if available
+        const arr = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<WishlistItem, "id">) })) as WishlistItem[]
         arr.sort((a: any, b: any) => (b?.updatedAt?.toMillis?.() ?? 0) - (a?.updatedAt?.toMillis?.() ?? 0))
         setItems(arr)
         setLoading(false)
@@ -60,17 +56,17 @@ export function useCart() {
     return () => unsub()
   }, [user])
 
-  const persistLocal = (next: CartItem[]) => {
+  const persistLocal = (next: WishlistItem[]) => {
     setItems(next)
     try {
       localStorage.setItem(LOCAL_KEY, JSON.stringify(next))
     } catch {}
   }
 
-  const addItem = async (item: CartItem) => {
+  const add = async (item: WishlistItem) => {
     if (firebaseEnabled && user) {
       const db = getFirestore(ensureFirebaseApp())
-      await setDoc(doc(db, "users", user.uid, "cart", item.id), {
+      await setDoc(doc(db, "users", user.uid, "wishlist", item.id), {
         title: item.title,
         price: item.price,
         imageUrl: item.imageUrl || "",
@@ -84,10 +80,10 @@ export function useCart() {
     persistLocal([{ ...item, updatedAt: Date.now() }, ...items])
   }
 
-  const removeItem = async (id: string) => {
+  const remove = async (id: string) => {
     if (firebaseEnabled && user) {
       const db = getFirestore(ensureFirebaseApp())
-      await deleteDoc(doc(db, "users", user.uid, "cart", id))
+      await deleteDoc(doc(db, "users", user.uid, "wishlist", id))
       return
     }
     persistLocal(items.filter((i) => i.id !== id))
@@ -95,32 +91,17 @@ export function useCart() {
 
   const clear = async () => {
     if (firebaseEnabled && user) {
-      const db = getFirestore(ensureFirebaseApp())
       // Optimistic local clear
       setItems([])
-      // Fetch current docs and delete client-side (simpler without admin batch)
-      // Consumer of hook already subscribed; snapshot will update
-      try {
-        const ref = collection(db, "users", user.uid, "cart")
-        // We avoid a read here for rate limits; rely on UI to remove progressively if needed
-      } catch {}
       return
     }
     persistLocal([])
   }
 
-  const isInCart = (id: string) => items.some((i) => i.id === id)
+  const has = (id: string) => items.some((i) => i.id === id)
   const count = items.length
 
-  return {
-    items,
-    count,
-    loading,
-    addItem,
-    removeItem,
-    clear,
-    isInCart,
-  }
+  return { items, count, loading, add, remove, clear, has }
 }
 
 
