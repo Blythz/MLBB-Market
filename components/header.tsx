@@ -13,6 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import AuthProvider, { useAuth } from "@/components/auth-provider"
 import LoginDialog from "@/components/login-dialog"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { ShoppingCart } from "lucide-react"
+import CartSheet from "@/components/cart-sheet"
+import { useCart } from "@/hooks/use-cart"
 
 function initials(name?: string, email?: string) {
   const base = name || email || "U"
@@ -21,7 +25,9 @@ function initials(name?: string, email?: string) {
 }
 
 function HeaderInner() {
+  const [cartOpen, setCartOpen] = useState(false)
   const { user, profile, loading, signOut } = useAuth()
+  const { count } = useCart()
   const canPost = useMemo(() => {
     const role = profile?.role
     const status = profile?.sellerStatus
@@ -42,6 +48,18 @@ function HeaderInner() {
           <Link href="/sellers" className="text-xs text-neutral-300 hover:text-white">
             Verified Sellers
           </Link>
+          <button
+            onClick={() => setCartOpen(true)}
+            className="relative inline-flex items-center gap-2 rounded-md p-1.5 hover:bg-neutral-900"
+            aria-label="Open cart"
+          >
+            <ShoppingCart className="h-5 w-5 text-neutral-300" />
+            {count > 0 && (
+              <span className="absolute -right-1 -top-1 rounded-full bg-cyan-500 px-1.5 text-[10px] font-semibold text-white">
+                {count}
+              </span>
+            )}
+          </button>
           {!loading && !user && <LoginDialog />}
 
           {!loading && user && (
@@ -80,6 +98,7 @@ function HeaderInner() {
           )}
         </nav>
       </div>
+      <CartSheet open={cartOpen} onOpenChange={setCartOpen} />
     </header>
   )
 }
