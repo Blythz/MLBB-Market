@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/utils/format"
 import ReviewStars from "@/components/reviews/review-stars"
 import { useSellerReviewSummary } from "@/hooks/use-seller-review-summary"
-import { Eye, Shield, Plus } from "lucide-react"
-import { useCart } from "@/hooks/use-cart"
+import { Eye, Shield, Heart } from "lucide-react"
+import { useWishlist } from "@/hooks/use-wishlist"
 
 export type ListingCardProps = {
   id?: string
@@ -40,7 +40,7 @@ export default function ListingCard({
   isVerifiedSeller = false,
 }: ListingCardProps) {
   const { avg, count } = useSellerReviewSummary(sellerId)
-  const { addItem, isInCart } = useCart()
+  const { add, has } = useWishlist()
 
   return (
     <Link href={"/listing/" + id} className="group block h-full">
@@ -77,19 +77,19 @@ export default function ListingCard({
               </Badge>
             </div>
           )}
-          {/* Add to cart */}
+          {/* Add to wishlist */}
           <div className="absolute bottom-3 right-3">
             <button
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                addItem({ id, title, price, imageUrl, sellerId })
+                add({ id, title, price, imageUrl, sellerId })
               }}
-              disabled={isInCart(id)}
-              className="inline-flex items-center gap-1 rounded-full border border-cyan-500/40 bg-neutral-900/80 px-3 py-1.5 text-xs text-cyan-200 hover:bg-neutral-800 disabled:opacity-50"
+              disabled={has(id)}
+              className="inline-flex items-center gap-1 rounded-full border border-pink-500/40 bg-neutral-900/80 px-3 py-1.5 text-xs text-pink-200 hover:bg-neutral-800 disabled:opacity-50"
             >
-              <Plus className="h-3.5 w-3.5" />
-              {isInCart(id) ? "In Cart" : "Add to Cart"}
+              <Heart className="h-3.5 w-3.5" />
+              {has(id) ? "In Wishlist" : "Wishlist"}
             </button>
           </div>
         </div>
