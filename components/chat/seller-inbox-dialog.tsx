@@ -201,6 +201,8 @@ export default function SellerInboxDialog({
           /* Desktop centered */
           sm:top-[50%] sm:left-[50%] sm:right-auto sm:bottom-auto sm:translate-x-[-50%] sm:translate-y-[-50%]
           sm:h-[80vh] sm:max-w-4xl sm:rounded-2xl sm:p-0
+          md:h-[85vh] md:max-w-5xl
+          lg:max-w-6xl
         "
       >
         <DialogHeader className="border-b border-white/10 bg-[#202c33] px-4 py-3">
@@ -228,9 +230,9 @@ export default function SellerInboxDialog({
           </div>
         ) : (
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 md:grid-cols-3">
-            <div className={"border-r border-white/10 bg-[#111b21] md:col-span-1 " + (mobileThread ? "hidden md:block" : "block") }>
-              <div className="mb-2 px-3 pt-2 text-xs text-[#8696a0]">Conversations</div>
-              <div className="flex max-h-[60vh] flex-col overflow-y-auto">
+            <div className={"border-r border-white/10 bg-[#111b21] md:col-span-1 " + (mobileThread ? "hidden md:flex" : "flex") + " min-h-0 flex-col"}>
+              <div className="px-3 py-2 text-xs text-[#8696a0]">Conversations</div>
+              <div className="flex-1 min-h-0 overflow-y-auto">
                 {convos.length ? (
                   convos.map((c: Conversation) => {
                     const active = selected?.id === c.id
@@ -265,7 +267,7 @@ export default function SellerInboxDialog({
               </div>
             </div>
 
-            <div className={"flex min-h-0 flex-col md:col-span-2 " + (mobileThread ? "block" : "hidden md:block") }>
+            <div className={"min-h-0 md:col-span-2 " + (mobileThread ? "flex" : "hidden md:flex") + " flex-col"}>
               <div className="border-b border-white/10 bg-[#202c33] px-3 py-2 text-xs text-[#8696a0]">Thread</div>
               <div
                 ref={scrollRef}
