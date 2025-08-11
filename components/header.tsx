@@ -14,9 +14,9 @@ import AuthProvider, { useAuth } from "@/components/auth-provider"
 import LoginDialog from "@/components/login-dialog"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
-import { ShoppingCart } from "lucide-react"
-import CartSheet from "./cart-sheet"
-import { useCart } from "@/hooks/use-cart"
+import { Heart } from "lucide-react"
+import WishlistSheet from "./wishlist-sheet"
+import { useWishlist } from "@/hooks/use-wishlist"
 
 function initials(name?: string, email?: string) {
   const base = name || email || "U"
@@ -25,9 +25,9 @@ function initials(name?: string, email?: string) {
 }
 
 function HeaderInner() {
-  const [cartOpen, setCartOpen] = useState(false)
+  const [wishlistOpen, setWishlistOpen] = useState(false)
   const { user, profile, loading, signOut } = useAuth()
-  const { count } = useCart()
+  const { count } = useWishlist()
   const canPost = useMemo(() => {
     const role = profile?.role
     const status = profile?.sellerStatus
@@ -49,11 +49,11 @@ function HeaderInner() {
             Verified Sellers
           </Link>
           <button
-            onClick={() => setCartOpen(true)}
+            onClick={() => setWishlistOpen(true)}
             className="relative inline-flex items-center gap-2 rounded-md p-1.5 hover:bg-neutral-900"
-            aria-label="Open cart"
+            aria-label="Open wishlist"
           >
-            <ShoppingCart className="h-5 w-5 text-neutral-300" />
+            <Heart className="h-5 w-5 text-neutral-300" />
             {count > 0 && (
               <span className="absolute -right-1 -top-1 rounded-full bg-cyan-500 px-1.5 text-[10px] font-semibold text-white">
                 {count}
@@ -98,7 +98,7 @@ function HeaderInner() {
           )}
         </nav>
       </div>
-      <CartSheet open={cartOpen} onOpenChange={setCartOpen} />
+      <WishlistSheet open={wishlistOpen} onOpenChange={setWishlistOpen} />
     </header>
   )
 }
