@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, getFirestore } from "firebase/firestore"
+import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, getFirestore, getDocs } from "firebase/firestore"
 import { ensureFirebaseApp, firebaseEnabled } from "@/lib/firebase"
 import { useAuth } from "@/components/auth-provider"
 
@@ -93,6 +93,14 @@ export function useWishlist() {
     if (firebaseEnabled && user) {
       // Optimistic local clear
       setItems([])
+      try {
+        const db = getFirestore(ensureFirebaseApp())
+        const ref = collection(db, "users", user.uid, "wishlist")
+        const snap = await getDocs(ref)
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)))
+      } catch {
+        // ignore, snapshot will re-sync
+      }
       return
     }
     persistLocal([])
