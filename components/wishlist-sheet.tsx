@@ -36,10 +36,17 @@ export default function WishlistSheet({ open, onOpenChange }: { open: boolean; o
         </div>
         <div className="mt-auto space-y-3 p-4">
           <div className="flex gap-2">
-            <Button variant="outline" onClick={clear} className="flex-1 border-neutral-800">
+            <Button
+              variant="outline"
+              onClick={clear}
+              className="flex-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
+            >
               Clear
             </Button>
-            <Button onClick={() => onOpenChange(false)} className="flex-1 bg-gradient-to-r from-cyan-500 to-fuchsia-500">
+            <Button
+              onClick={() => onOpenChange(false)}
+              className="flex-1 border-cyan-500/40 bg-neutral-900 text-cyan-200 hover:bg-neutral-800 hover:text-cyan-100"
+            >
               Close
             </Button>
           </div>
