@@ -43,17 +43,15 @@ export default function ListingCard({
   const { addItem, isInCart } = useCart()
 
   return (
-    <div className="group block h-full">
+    <Link href={"/listing/" + id} className="group block h-full">
       <Card className="h-full overflow-hidden border-neutral-800/50 bg-gradient-to-b from-neutral-900/50 to-neutral-900/80 backdrop-blur-sm transition-all duration-300 hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1">
         <div className="relative aspect-[2/3] w-full overflow-hidden">
-          <Link href={"/listing/" + id} className="absolute inset-0">
-            <img
-              src={imageUrl || "/placeholder.svg?height=900&width=600&query=mlbb%20portrait"}
-              alt={title}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-              loading="lazy"
-            />
-          </Link>
+          <img
+            src={imageUrl || "/placeholder.svg?height=900&width=600&query=mlbb%20portrait"}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
 
           {/* Overlay on hover */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -125,6 +123,6 @@ export default function ListingCard({
           </div>
         </CardContent>
       </Card>
-    </div>
+    </Link>
   )
 }
