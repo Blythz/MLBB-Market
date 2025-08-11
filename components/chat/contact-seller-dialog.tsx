@@ -53,6 +53,7 @@ export default function ContactSellerDialog({
   }, [listingId, user])
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
+  const bottomRef = React.useRef<HTMLDivElement>(null)
 
   const formatTime = (value: any): string => {
     try {
@@ -109,12 +110,9 @@ export default function ContactSellerDialog({
     })()
   }, [open, convoId, listingId, sellerId, user, buyerName])
 
-  React.useEffect(() => {
-    // auto-scroll to bottom when messages change or dialog opens
-    const el = scrollRef.current
-    if (el) {
-      el.scrollTop = el.scrollHeight
-    }
+  React.useLayoutEffect(() => {
+    // robust auto-scroll using sentinel
+    bottomRef.current?.scrollIntoView({ block: "end" })
   }, [messages, open])
 
   const send = async () => {
@@ -150,44 +148,45 @@ export default function ContactSellerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[70vh] max-w-2xl flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-900/80 to-neutral-950/80 p-0 text-neutral-100 shadow-2xl backdrop-blur-xl">
-        <DialogHeader className="border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent px-6 py-4">
-          <DialogTitle className="text-base font-semibold tracking-tight">Contact Seller</DialogTitle>
+      <DialogContent className="flex h-[70vh] max-w-2xl flex-col rounded-2xl border border-white/10 bg-[#111b21] p-0 text-neutral-100 shadow-2xl">
+        <DialogHeader className="border-b border-white/10 bg-[#202c33] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2a3942] text-xs">S</div>
+            <DialogTitle className="text-sm font-medium">Chat with Seller</DialogTitle>
+          </div>
         </DialogHeader>
 
         {!user ? (
-          <div className="m-6 rounded-xl border border-white/10 bg-neutral-900/60 p-4 text-sm text-neutral-300 shadow-inner">
+          <div className="m-6 rounded-xl border border-white/10 bg-[#202c33] p-4 text-sm text-neutral-300 shadow-inner">
             Please sign in to message the seller.
           </div>
         ) : (
-          <div className="flex flex-1 flex-col p-4">
+          <div className="flex min-h-0 flex-1 flex-col">
             <div
               ref={scrollRef}
-              className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-white/10 bg-neutral-950/60 p-3 shadow-inner"
+              className="flex-1 space-y-2 overflow-y-auto bg-[radial-gradient(circle_at_0_0,#0b141a_0%,#111b21_55%,#0a1318_100%)] px-3 py-4"
             >
               {loading ? (
                 <div className="space-y-2">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-4 w-1/2 animate-pulse rounded bg-neutral-900/70" />
+                    <div key={i} className="h-4 w-1/2 animate-pulse rounded bg-[#202c33]" />
                   ))}
                 </div>
               ) : messages.length ? (
                 messages.map((m: Message) => {
                   const mine = m.senderId === user.uid
                   return (
-                    <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
+                    <div key={m.id} className={"flex px-1 " + (mine ? "justify-end" : "justify-start")}>
                       <div
                         className={
-                          "group max-w-[75%] rounded-2xl px-3 py-2 text-sm ring-1 transition " +
+                          "group max-w-[78%] rounded-2xl px-3 py-2 text-[13px] shadow " +
                           (mine
-                            ? "ring-cyan-400/30 bg-gradient-to-br from-cyan-500/20 to-blue-500/10 text-cyan-100 shadow-lg"
-                            : "ring-white/10 bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 text-neutral-100 shadow")
+                            ? "bg-[#005c4b] text-white"
+                            : "bg-[#202c33] text-[#e9edef]")
                         }
                       >
-                        <div>{m.text}</div>
-                        <div className={"mt-1 text-[10px] " + (mine ? "text-cyan-200/60" : "text-neutral-400/70")}>
-                          {formatTime(m.createdAt)}
-                        </div>
+                        <div className="whitespace-pre-wrap leading-5">{m.text}</div>
+                        <div className={"mt-1 text-[10px] " + (mine ? "text-white/70" : "text-[#aebac1]")}>{formatTime(m.createdAt)}</div>
                       </div>
                     </div>
                   )
@@ -195,31 +194,56 @@ export default function ContactSellerDialog({
               ) : (
                 <div className="text-center text-sm text-neutral-400">No messages yet. Say hi!</div>
               )}
+              <div ref={bottomRef} />
             </div>
 
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex w-full items-center gap-2 rounded-full border border-white/10 bg-neutral-900/60 px-3 py-1.5 shadow-inner backdrop-blur">
-                <Input
-                  placeholder="Write a message..."
-                  value={text}
-                  onChange={onInputChange}
-                  onKeyDown={onInputKeyDown}
-                  className="h-10 flex-1 border-none bg-transparent text-sm focus-visible:ring-0"
-                />
-                <Button
-                  onClick={send}
-                  disabled={!text.trim()}
-                  className="h-9 w-9 shrink-0 rounded-full border-cyan-500/40 bg-cyan-500/20 text-cyan-200 hover:bg-cyan-500/30 hover:text-cyan-100"
+            <div className="border-t border-white/10 bg-[#202c33] px-2 py-2">
+              <div className="flex items-center gap-2">
+                <button
+                  className="grid h-10 w-10 place-items-center rounded-full text-[#8696a0] hover:bg-white/5"
+                  title="Emoji"
+                  type="button"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="h-4 w-4"
-                  >
-                    <path d="M3.4 20.6L21 13.2c1-.4 1-1.9 0-2.3L3.4 3.4c-1-.4-2 .5-1.7 1.5l2.6 7.1c.1.3.1.6 0 .9l-2.6 7.1c-.3 1 .7 1.9 1.7 1.6zM6.7 13.3l11-1.1-11-1.1 1.7-4.7 9.1 5.8-9.1 5.8-1.7-4.7z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                    <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-3.5 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 18a5.5 5.5 0 01-5-3h10a5.5 5.5 0 01-5 3z" />
                   </svg>
-                </Button>
+                </button>
+                <button
+                  className="grid h-10 w-10 place-items-center rounded-full text-[#8696a0] hover:bg-white/5"
+                  title="Attach"
+                  type="button"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                    <path d="M16.5 6.5l-6.8 6.8a3 3 0 104.2 4.2l7.4-7.4a5 5 0 10-7.1-7.1L5.8 11.4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <div className="flex w-full items-center gap-2 rounded-full bg-[#2a3942] px-3">
+                  <Input
+                    placeholder="Type a message"
+                    value={text}
+                    onChange={onInputChange}
+                    onKeyDown={onInputKeyDown}
+                    className="h-10 flex-1 border-none bg-transparent text-sm placeholder:text-[#8696a0] focus-visible:ring-0"
+                  />
+                  <Button
+                    onClick={send}
+                    disabled={!text.trim()}
+                    className="h-9 w-9 shrink-0 rounded-full bg-[#00a884] text-white hover:bg-[#029270]"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                      <path d="M3.4 20.6L21 13.2c1-.4 1-1.9 0-2.3L3.4 3.4c-1-.4-2 .5-1.7 1.5l2.6 7.1c.1.3.1.6 0 .9l-2.6 7.1c-.3 1 .7 1.9 1.7 1.6zM6.7 13.3l11-1.1-11-1.1 1.7-4.7 9.1 5.8-9.1 5.8-1.7-4.7z" />
+                    </svg>
+                  </Button>
+                  <button
+                    className="grid h-10 w-10 place-items-center rounded-full text-[#8696a0] hover:bg-white/5"
+                    title="Voice"
+                    type="button"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                      <path d="M12 14a3 3 0 003-3V7a3 3 0 10-6 0v4a3 3 0 003 3zm-7-3a7 7 0 0014 0h-2a5 5 0 11-10 0H5z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
