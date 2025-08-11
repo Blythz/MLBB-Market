@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { getFirestore, doc, getDoc, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore"
-import { TriangleAlert, Trash2, MessagesSquare, MessageCircle, Check } from "lucide-react"
+import { TriangleAlert, Trash2, MessagesSquare, MessageCircle, Check, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -23,11 +23,13 @@ import {
 import { getStorage, ref, deleteObject } from "firebase/storage"
 import ContactSellerDialog from "@/components/chat/contact-seller-dialog"
 import SellerInboxDialog from "@/components/chat/seller-inbox-dialog"
+import { useWishlist } from "@/hooks/use-wishlist"
 
 export default function ListingDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const { user } = useAuth()
+  const { add, remove, has } = useWishlist()
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -180,6 +182,22 @@ export default function ListingDetailPage() {
               >
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Contact seller
+              </Button>
+            )}
+
+            {/* Wishlist toggle (available for all viewers) */}
+            {!isOwner && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!listing) return
+                  if (has(listing.id)) remove(listing.id)
+                  else add({ id: listing.id, title: listing.title, price: listing.price, imageUrl: listing.imageUrls?.[0], sellerId: listing.userId })
+                }}
+                className={"border-pink-500/40 text-pink-200 " + (has(listing.id) ? "bg-pink-500/10" : "bg-neutral-900")}
+              >
+                <Heart className="mr-2 h-4 w-4" />
+                {has(listing.id) ? "In Wishlist" : "Wishlist"}
               </Button>
             )}
 
