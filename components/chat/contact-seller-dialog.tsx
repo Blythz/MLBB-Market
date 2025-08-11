@@ -148,7 +148,17 @@ export default function ContactSellerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[70vh] max-w-2xl flex-col rounded-2xl border border-white/10 bg-[#111b21] p-0 text-neutral-100 shadow-2xl">
+      <DialogContent
+        className="
+          flex flex-col border border-white/10 bg-[#111b21] text-neutral-100 shadow-2xl
+          /* Mobile: fullscreen bottom sheet */
+          top-auto left-0 right-0 bottom-0 translate-x-0 translate-y-0 h-[100dvh] max-w-full rounded-none p-0
+          data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom duration-300
+          /* Desktop: centered modal */
+          sm:top-[50%] sm:left-[50%] sm:right-auto sm:bottom-auto sm:translate-x-[-50%] sm:translate-y-[-50%]
+          sm:h-[70vh] sm:max-w-2xl sm:rounded-2xl sm:p-0
+        "
+      >
         <DialogHeader className="border-b border-white/10 bg-[#202c33] px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2a3942] text-xs">S</div>
