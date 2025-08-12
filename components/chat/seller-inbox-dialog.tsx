@@ -19,6 +19,9 @@ import {
 } from "firebase/firestore"
 import { ensureFirebaseApp, firebaseEnabled } from "@/lib/firebase"
 import { useAuth } from "@/components/auth-provider"
+import type { Listing } from "@/types/listing"
+import { formatCurrency } from "@/utils/format"
+import Link from "next/link"
 
 type Conversation = {
   id: string
@@ -41,10 +44,12 @@ export default function SellerInboxDialog({
   open = false,
   onOpenChange = () => {},
   listingId,
+  initialConversationId,
 }: {
   open?: boolean
   onOpenChange?: (v: boolean) => void
   listingId: string
+  initialConversationId?: string
 }) {
   const { user } = useAuth()
   const [convos, setConvos] = React.useState<Conversation[]>([])
@@ -53,6 +58,7 @@ export default function SellerInboxDialog({
   const [text, setText] = React.useState("")
   const [loadingMessages, setLoadingMessages] = React.useState(false)
   const [mobileThread, setMobileThread] = React.useState(false)
+  const [listing, setListing] = React.useState<Listing | null>(null)
 
   // Fallback cache for buyer names if conversation is missing buyerName
   const [buyerNameMap, setBuyerNameMap] = React.useState<Record<string, string>>({})
@@ -90,21 +96,33 @@ export default function SellerInboxDialog({
     if (!firebaseEnabled || !user) return
     const app = ensureFirebaseApp()
     const db = getFirestore(app)
+    // load listing summary for header card
+    ;(async () => {
+      try {
+        const ls = await getDoc(doc(db, "listings", listingId))
+        if (ls.exists()) setListing({ id: ls.id, ...(ls.data() as Omit<Listing, "id">) })
+      } catch {}
+    })()
     const qy = query(
       collection(db, "conversations"),
       where("listingId", "==", listingId),
       where("sellerId", "==", user.uid),
     )
-    const unsub = onSnapshot(qy, (snap: any) => {
+    const unsub = onSnapshot(qy, async (snap: any) => {
       const arr = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) })) as Conversation[]
       arr.sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0))
       setConvos(arr)
       if (!selected && arr.length) {
-        setSelected(arr[0])
+        if (initialConversationId) {
+          const match = arr.find((c) => c.id === initialConversationId)
+          setSelected(match || arr[0])
+        } else {
+          setSelected(arr[0])
+        }
       }
     })
     return () => unsub()
-  }, [open, listingId, user, selected])
+  }, [open, listingId, user, selected, initialConversationId])
 
   // Fetch missing buyer names as a fallback
   React.useEffect(() => {
@@ -143,10 +161,18 @@ export default function SellerInboxDialog({
     const db = getFirestore(app)
     const qy = query(collection(db, "conversations", selected.id, "messages"), orderBy("createdAt", "asc"))
     setLoadingMessages(true)
-    const unsub = onSnapshot(qy, (snap: any) => {
+    const unsub = onSnapshot(qy, async (snap: any) => {
       const arr = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) })) as Message[]
       setMessages(arr)
       setLoadingMessages(false)
+      // mark as read for seller when viewing this thread
+      try {
+        await setDoc(
+          doc(db, "conversations", selected.id),
+          { sellerLastReadAt: serverTimestamp() },
+          { merge: true },
+        )
+      } catch {}
     })
     return () => unsub()
   }, [open, selected])
@@ -168,6 +194,7 @@ export default function SellerInboxDialog({
       doc(db, "conversations", selected.id),
       {
         lastMessage: text.trim(),
+        lastSenderId: user.uid,
         updatedAt: serverTimestamp(),
       },
       { merge: true },
@@ -272,6 +299,25 @@ export default function SellerInboxDialog({
                 ref={scrollRef}
                 className="flex-1 space-y-2 overflow-y-auto bg-[radial-gradient(circle_at_0_0,#0b141a_0%,#111b21_55%,#0a1318_100%)] px-3 py-4"
               >
+              {listing && (
+                <Link
+                  href={`/listing/${listing.id}`}
+                  className="mb-2 block rounded-xl border border-white/10 bg-[#202c33] p-3 transition hover:bg-white/5"
+                >
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={listing.imageUrls?.[0] || "/placeholder.svg?height=64&width=64"}
+                      alt="listing"
+                      className="flex-shrink-0 rounded object-cover h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-base sm:text-lg font-medium text-neutral-100">{listing.title}</div>
+                      <div className="truncate text-xs sm:text-sm text-neutral-400">{listing.description}</div>
+                      <div className="text-sm sm:text-base font-semibold text-emerald-300">{formatCurrency(listing.price)}</div>
+                    </div>
+                  </div>
+                </Link>
+              )}
                 {loadingMessages ? (
                   <div className="space-y-2">
                     {Array.from({ length: 6 }).map((_, i) => (

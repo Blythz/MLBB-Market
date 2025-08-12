@@ -18,6 +18,9 @@ import {
   setDoc,
 } from "firebase/firestore"
 import { useAuth } from "@/components/auth-provider"
+import type { Listing } from "@/types/listing"
+import { formatCurrency } from "@/utils/format"
+import Link from "next/link"
 
 type Message = {
   id: string
@@ -41,6 +44,7 @@ export default function ContactSellerDialog({
   const [text, setText] = React.useState("")
   const [loading, setLoading] = React.useState(true)
   const [messages, setMessages] = React.useState<Message[]>([])
+  const [listing, setListing] = React.useState<Listing | null>(null)
 
   const buyerName = React.useMemo(
     () => profile?.fullName || profile?.displayName || user?.displayName || user?.email || "Buyer",
@@ -77,6 +81,11 @@ export default function ContactSellerDialog({
     const app = ensureFirebaseApp()
     const db = getFirestore(app)
     ;(async () => {
+      // fetch listing summary for header
+      try {
+        const ls = await getDoc(doc(db, "listings", listingId))
+        if (ls.exists()) setListing({ id: ls.id, ...(ls.data() as Omit<Listing, "id">) })
+      } catch {}
       // ensure conversation doc exists and has buyerName
       const cRef = doc(db, "conversations", convoId)
       const cSnap = await getDoc(cRef)
@@ -101,10 +110,18 @@ export default function ContactSellerDialog({
       }
       const mRef = collection(db, "conversations", convoId, "messages")
       const qy = query(mRef, orderBy("createdAt", "asc"))
-      const unsub = onSnapshot(qy, (snap: any) => {
+      const unsub = onSnapshot(qy, async (snap: any) => {
         const arr = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) })) as Message[]
         setMessages(arr)
         setLoading(false)
+        // mark as read for buyer when viewing
+        try {
+          await setDoc(
+            doc(db, "conversations", convoId),
+            { buyerLastReadAt: serverTimestamp() },
+            { merge: true },
+          )
+        } catch {}
       })
       return () => unsub()
     })()
@@ -131,6 +148,7 @@ export default function ContactSellerDialog({
       {
         buyerName,
         lastMessage: text.trim(),
+        lastSenderId: user.uid,
         updatedAt: serverTimestamp(),
       },
       { merge: true },
@@ -176,6 +194,25 @@ export default function ContactSellerDialog({
               ref={scrollRef}
               className="flex-1 space-y-2 overflow-y-auto bg-[radial-gradient(circle_at_0_0,#0b141a_0%,#111b21_55%,#0a1318_100%)] px-3 py-4"
             >
+              {listing && (
+                <Link
+                  href={`/listing/${listing.id}`}
+                  className="mb-2 block rounded-xl border border-white/10 bg-[#202c33] p-3 transition hover:bg-white/5"
+                >
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={listing.imageUrls?.[0] || "/placeholder.svg?height=64&width=64"}
+                      alt="listing"
+                      className="flex-shrink-0 rounded object-cover h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-base sm:text-lg font-medium text-neutral-100">{listing.title}</div>
+                      <div className="truncate text-xs sm:text-sm text-neutral-400">{listing.description}</div>
+                      <div className="text-sm sm:text-base font-semibold text-emerald-300">{formatCurrency(listing.price)}</div>
+                    </div>
+                  </div>
+                </Link>
+              )}
               {loading ? (
                 <div className="space-y-2">
                   {Array.from({ length: 6 }).map((_, i) => (
