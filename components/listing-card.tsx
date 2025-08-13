@@ -73,7 +73,6 @@ export default function ListingCard({
             <div className="absolute top-3 right-3">
               <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-lg">
                 <Shield className="h-3 w-3 mr-1" />
-                Verified
               </Badge>
             </div>
           )}
